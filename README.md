@@ -47,33 +47,6 @@ docs/pruebas/           Evidencias y resultados reales de pruebas
 docs/bitacora_ia.md     Registro de asistencia de herramientas de IA
 ```
 
-## Requisitos previos
-
-- Python 3.10 o posterior.
-- Git.
-- Windows PowerShell o una terminal compatible.
-
-## Preparar el entorno en Windows
-
-Desde la raíz del repositorio, crea y activa un entorno virtual:
-
-```powershell
-py -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-Si PowerShell bloquea la activación, se puede ejecutar desde una terminal CMD:
-
-```cmd
-.venv\Scripts\activate.bat
-```
-
-Instala las dependencias declaradas con:
-
-```powershell
-python -m pip install -r requirements.txt
-```
-
 ## Estado del desarrollo
 
 **Preparación inicial:** estructura de carpetas y documentación base. Los servicios REST, RPC/XML-RPC, TCP y WebSocket todavía están pendientes de implementación; no se afirma que estén funcionando. Las pruebas de integración y sus resultados también están pendientes.
