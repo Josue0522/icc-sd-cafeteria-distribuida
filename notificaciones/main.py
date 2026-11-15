@@ -24,6 +24,14 @@ async def conectar_cliente(websocket: WebSocket, pedido_id: int):
 
     conexiones[pedido_id].append(websocket)
 
+    # Enviar el último estado al reconectarse
+    if pedido_id in pedidos:
+        await websocket.send_json({
+            "pedido_id": pedido_id,
+            "estado": pedidos[pedido_id],
+            "mensaje": f"Tu pedido está {pedidos[pedido_id]}"
+        })
+
     print(f"Cliente conectado al pedido {pedido_id}")
 
     try:
