@@ -49,3 +49,7 @@ La comunicación real deberá verificarse cuando estén disponibles los servidor
 ### Evidencia
 
 La salida de Pytest obtenida en la terminal de Visual Studio Code constituye la evidencia de ejecución de estas pruebas.
+
+## Otros registros
+
+- [Resultados TCP y suite completa del 15/11/2026](tcp-2026-11-15.md)

@@ -20,7 +20,7 @@ Los datos se guardan en memoria. No usamos una base de datos externa ni Kafka.
 
 ## Estado
 
-En esta rama están los módulos REST y RPC. Caja TCP y WebSockets todavía están pendientes de integración. Aún falta comprobar el recorrido completo de un pedido con todos los servicios activos.
+En esta rama están los módulos REST, RPC y el servidor TCP de caja. Falta integrar WebSockets y comprobar el recorrido completo de un pedido con todos los servicios activos.
 
 ## Preparar el entorno en Windows
 

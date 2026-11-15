@@ -198,15 +198,26 @@ El servidor TCP de caja y facturación escuchará en un puerto configurable.
 ### 6.2 Solicitud de registro de venta
 
 ```json
-
 {
-  "producto_id": "CAF-001",
-  "nombre": "Café americano",
-  "cantidad": 2,
-  "precio_unitario": "1.50",
-  "subtotal": "3.00"
+  "version": 1,
+  "tipo": "REGISTRAR_VENTA",
+  "operacion_id": "VENTA-550e8400-e29b-41d4-a716-446655440000",
+  "pedido_id": "550e8400-e29b-41d4-a716-446655440000",
+  "moneda": "USD",
+  "items": [
+    {
+      "producto_id": "CAF-001",
+      "nombre": "Café americano",
+      "cantidad": 2,
+      "precio_unitario": "1.50",
+      "subtotal": "3.00"
+    }
+  ],
+  "total": "3.00"
 }
 ```
+
+Este ejemplo refleja el mensaje generado por `api.servicios.construir_solicitud_venta`. Los importes de entrada viajan como texto decimal; Caja debe calcularlos con `Decimal`.
 
 ### 6.3 Respuesta exitosa
 
@@ -219,7 +230,7 @@ El servidor TCP de caja y facturación escuchará en un puerto configurable.
   "venta_id": "VENTA-001",
   "comprobante": {
     "numero": "COMP-001",
-    "total_centavos": 3.00,
+    "total_centavos": 300,
     "moneda": "USD"
   }
 }
