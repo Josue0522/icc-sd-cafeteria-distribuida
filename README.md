@@ -1,41 +1,42 @@
 # Cafetería distribuida
 
-Este proyecto es una práctica de Sistemas Distribuidos. La idea es que un estudiante pueda hacer un pedido desde una página web y consultar cómo avanza.
+Práctica de Sistemas Distribuidos para gestionar pedidos de una cafetería universitaria. Los pedidos se crean por REST; la API coordina caja, cocina y las notificaciones del estudiante.
 
-La aplicación se dividirá en estos componentes:
+## Componentes
 
-- `api/`: crear y consultar pedidos mediante REST con FastAPI.
-- `caja_facturacion/`: procesar la venta usando sockets TCP.
-- `cocina/`: recibir solicitudes de preparación por XML-RPC.
-- `notificaciones/` y `web/`: enviar avisos por WebSockets y mostrar la interfaz.
+- `api/`: API REST con FastAPI y coordinación de pedidos.
+- `cocina/`: servidor de cocina por XML-RPC.
+- `caja_facturacion/`: módulo de caja por sockets TCP.
+- `notificaciones/` y `web/`: avisos WebSocket e interfaz.
 
-Los datos podrán mantenerse en memoria. No se utilizará Kafka ni una base de datos externa.
+Los datos se guardan en memoria. No usamos una base de datos externa ni Kafka.
 
-## Equipo
+## Responsables
 
-- Mateo: API REST (`feature/rest-pedidos`).
-- Sebastián: cocina y XML-RPC (`feature/rpc-cocina`).
-- Josué: caja y sockets TCP (`feature/tcp-caja`).
+- Mateo: REST (`feature/rest-pedidos`).
+- Sebastián: cocina/RPC (`feature/rpc-cocina`).
+- Josué: caja/TCP (`branchJosue`).
 - Bryan: WebSockets e interfaz (`feature/websocket-notificaciones`).
 
-## Carpetas
+## Estado de esta rama
 
-```text
-api/                  API REST
-caja_facturacion/     Caja y facturación
-cocina/               Servicio de cocina
-notificaciones/       Avisos en tiempo real
-web/                  Interfaz web
-pruebas/              Pruebas
-docs/                 Documentación del proyecto
+Se integraron los cambios de REST. La integración con caja y notificaciones está pendiente; el sistema completo todavía no está probado.
+
+## Ejecutar la API
+
+Con Python instalado, desde la raíz del proyecto:
+
+```powershell
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m uvicorn api.main:app --reload
 ```
 
-<<<<<<< HEAD
-## Estado del desarrollo
+La documentación interactiva de FastAPI se encuentra en `http://127.0.0.1:8000/docs`.
 
-**Preparación inicial:** estructura de carpetas y documentación base. Los servicios REST, RPC/XML-RPC, TCP y WebSocket todavía están pendientes de implementación; no se afirma que estén funcionando. Las pruebas de integración y sus resultados también están pendientes.
-=======
-## Estado
+Para ejecutar las pruebas automatizadas:
 
-Por ahora está preparada la estructura y la documentación inicial. Los servicios y las pruebas todavía no están implementados.
->>>>>>> origin/main
+```powershell
+python -m pytest pruebas/ -v
+```
