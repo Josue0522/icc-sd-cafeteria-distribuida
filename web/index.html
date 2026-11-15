@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cafetería Universitaria</title>
+</head>
+<body>
+
+    <h1>Cafetería Universitaria</h1>
+    <h2>Notificaciones de pedidos</h2>
+
+    <p id="conexion">Conectando...</p>
+    <p id="estado">Esperando notificación...</p>
+
+    <button onclick="consultarPedido()">
+        Consultar pedido 101
+    </button>
+
+    <script>
+        const pedidoId = 101;
+
+        const socket = new WebSocket(
+            `ws://localhost:8001/ws/${pedidoId}`
+        );
+
+        socket.onopen = function() {
+            document.getElementById("conexion").innerText =
+                "Conectado al servidor WebSocket";
+        };
+
+        socket.onmessage = function(event) {
+            const datos = JSON.parse(event.data);
+
+            document.getElementById("estado").innerText =
+                datos.mensaje;
+        };
+
+        socket.onclose = function() {
+            document.getElementById("conexion").innerText =
+                "Desconectado del servidor";
+        };
+
+        function consultarPedido() {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send("Consultar pedido 101");
+            } else {
+                alert("No hay conexión con el servidor");
+            }
+        }
+    </script>
+
+</body>
+</html>
