@@ -33,3 +33,64 @@ docs/                 Documentación del proyecto
 ## Estado
 
 Por ahora está preparada la estructura y la documentación inicial. Los servicios y las pruebas todavía no están implementados.
+
+
+
+## Estado del desarrollo
+
+El proyecto cuenta con la estructura inicial y el desarrollo del módulo API REST.
+
+### Implementado inicialmente
+
+- API REST desarrollada con FastAPI.
+- Modelos y validaciones mediante Pydantic.
+- Almacenamiento temporal de pedidos y catálogo en memoria.
+- Creación y consulta de pedidos.
+- Control de idempotencia.
+- Generación de estadísticas de ventas.
+- Control de transiciones de estado.
+- Coordinador de pedidos con procesamiento en segundo plano.
+- Clientes preparados para comunicación TCP y XML-RPC.
+- Cliente preparado para publicar notificaciones mediante WebSockets.
+- Pruebas automatizadas de REST, coordinación y notificaciones.
+
+### Pendiente
+
+- Implementación de los servidores TCP, XML-RPC y WebSocket por sus respectivos responsables.
+- Integración real entre los cuatro mecanismos.
+- Pruebas de funcionamiento completo del sistema distribuido.
+- Revisión y validación final de la arquitectura por el equipo.
+
+El almacenamiento actual utiliza memoria y no una base de datos externa.
+
+
+
+## Ejecución del módulo REST
+
+Desde la carpeta principal del repositorio, activar el entorno virtual:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Instalar las dependencias:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+Iniciar la API:
+
+```powershell
+python -m uvicorn api.main:app --reload
+```
+
+La documentación interactiva estará disponible en:
+
+http://127.0.0.1:8000/docs
+
+Para ejecutar las pruebas automatizadas:
+
+```powershell
+python -m pytest pruebas/ -v
+```
