@@ -3,6 +3,7 @@ import asyncio
 import json
 import unittest
 from uuid import uuid4
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from notificaciones.main import app
@@ -70,6 +71,67 @@ class PruebasWebSocket(unittest.TestCase):
                             respuesta_2["estado"],
                             "EN_PREPARACION"
                         )
+
+
+    def test_recuperar_estado_desde_rest(self):
+
+        # Crear un identificador de pedido
+        pedido_id = str(uuid4())
+
+        # Simular que REST tiene el pedido en estado LISTO
+        evento_rest = {
+            "tipo": "estado_actualizado",
+            "pedido_id": pedido_id,
+            "estado": "LISTO",
+            "mensaje": "¡Tu pedido está listo!",
+            "fecha": "2026-11-15T21:00:00Z"
+        }
+
+        # Importar el almacenamiento del servidor
+        from notificaciones.main import pedidos
+
+        # Simular pérdida de memoria de WebSocket
+        pedidos.pop(pedido_id, None)
+
+        # Simular la respuesta de la consulta a REST
+        with patch(
+            "notificaciones.main.consultar_estado_rest",
+            return_value=evento_rest
+        ) as consulta_rest:
+
+            with TestClient(app) as cliente:
+
+                # El estudiante se conecta después del reinicio
+                with cliente.websocket_connect(
+                    f"/ws/pedidos/{pedido_id}"
+                ) as estudiante:
+
+                    respuesta = estudiante.receive_json()
+
+                    # Comprobar el identificador
+                    self.assertEqual(
+                        respuesta["pedido_id"],
+                        pedido_id
+                    )
+
+                    # Comprobar el estado recuperado
+                    self.assertEqual(
+                        respuesta["estado"],
+                        "LISTO"
+                    )
+
+                    # Comprobar el mensaje
+                    self.assertEqual(
+                        respuesta["mensaje"],
+                        "¡Tu pedido está listo!"
+                    )
+
+            # Comprobar que se consultó REST
+            consulta_rest.assert_called_once_with(pedido_id)
+
+        # Limpiar los datos de prueba
+        pedidos.pop(pedido_id, None)
+
 
 
 if __name__ == "__main__":
