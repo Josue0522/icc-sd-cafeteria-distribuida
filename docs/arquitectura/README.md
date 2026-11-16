@@ -1,3 +1,21 @@
+
 # Arquitectura
 
-Esta carpeta almacenará la documentación descriptiva de la arquitectura del sistema, incluidos diagramas, vistas de componentes y flujos de comunicación. El contenido se irá incorporando conforme el equipo acuerde y documente el diseño.
+Esta carpeta contiene la documentación de la arquitectura del Sistema Distribuido de Gestión de Pedidos para una Cafetería Universitaria.
+
+## Documentos
+
+| Archivo | Descripción |
+|---|---|
+| `contratos-comunicacion.md` | Propuesta de contratos REST, TCP, XML-RPC y WebSockets. |
+| `api-rest.md` | Diseño, funcionamiento, configuración y pruebas del módulo REST. |
+| `rpc-cocina.md` | Contrato y uso del servicio XML-RPC de cocina. |
+| `tcp-caja.md` | Protocolo y ejecución del módulo TCP de caja. |
+
+## Estado
+
+La documentación del módulo REST corresponde a su implementación inicial.
+
+Los contratos de comunicación y las direcciones de los servicios continúan sujetos a revisión y coordinación entre los integrantes.
+
+La arquitectura completa se actualizará conforme se integren los demás mecanismos de comunicación.
