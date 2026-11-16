@@ -1,4 +1,6 @@
-
+import asyncio
+from urllib.request import urlopen
+from urllib.error import HTTPError, URLError
 import json
 import logging
 from uuid import UUID
@@ -14,6 +16,53 @@ conexiones = {}
 
 # Último evento recibido de cada pedido
 pedidos = {}
+
+
+# Dirección de la API REST
+API_REST_URL = "http://127.0.0.1:8000"
+
+# Mensajes compatibles con los estados de REST
+MENSAJES_ESTADO = {
+    "RECIBIDO": "Tu pedido fue recibido correctamente.",
+    "PENDIENTE_CAJA": "Estamos verificando el registro de tu venta.",
+    "VENTA_CONFIRMADA": "Tu venta fue confirmada.",
+    "EN_PREPARACION": "Tu pedido está siendo preparado.",
+    "LISTO": "¡Tu pedido está listo!",
+    "ERROR_CAJA": "No fue posible confirmar tu venta.",
+    "ERROR_COCINA": "No fue posible completar la preparación.",
+}
+
+
+# Consultar el último estado oficial en REST
+def consultar_estado_rest(pedido_id):
+
+    url = f"{API_REST_URL}/pedidos/{pedido_id}"
+
+    try:
+        with urlopen(url, timeout=3) as respuesta:
+            datos = json.load(respuesta)
+
+        estado = datos["estado"]
+
+        return {
+            "tipo": "estado_actualizado",
+            "pedido_id": pedido_id,
+            "estado": estado,
+            "mensaje": MENSAJES_ESTADO.get(
+                estado,
+                f"Estado del pedido: {estado}"
+            ),
+            "fecha": datos["actualizado_en"]
+        }
+
+    except (HTTPError, URLError, TimeoutError, ValueError, KeyError) as error:
+        logger.warning(
+            "No se pudo recuperar el pedido %s desde REST: %s",
+            pedido_id,
+            error
+        )
+        return None
+
 
 
 # 1. Enviar una notificación a los estudiantes de un pedido
@@ -107,6 +156,17 @@ async def conectar_estudiante(websocket: WebSocket, pedido_id: str):
     logger.info("Estudiante conectado al pedido %s", pedido_id)
 
     try:
+
+        # Recuperar el estado desde REST si no está en memoria
+        if pedido_id not in pedidos:
+
+            evento_rest = await asyncio.to_thread(
+                consultar_estado_rest,
+                pedido_id
+            )
+
+            if evento_rest is not None:
+                pedidos.setdefault(pedido_id, evento_rest)
 
         # Recuperar el último evento al reconectarse
         if pedido_id in pedidos:
