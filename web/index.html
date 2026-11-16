@@ -3,56 +3,96 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Cafetería Universitaria</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones - Cafetería Universitaria</title>
 </head>
 <body>
 
     <h1>Cafetería Universitaria</h1>
     <h2>Notificaciones de pedidos</h2>
 
-    <h3 id="numeroPedido"></h3>
+    <label for="pedidoId">Identificador del pedido:</label>
+    <input
+        type="text"
+        id="pedidoId"
+        placeholder="Ingresa el UUID de tu pedido"
+        size="40"
+    >
 
-    <p id="conexion">Conectando...</p>
-    <p id="estado">Esperando notificación...</p>
+    <button onclick="conectarPedido()">Conectar al pedido</button>
 
-    <button onclick="consultarPedido()">
-        Consultar pedido 101
-    </button>
+    <p id="conexion">Sin conexión</p>
+    <h3 id="estado">Esperando notificaciones...</h3>
 
     <script>
-        const parametros = new URLSearchParams(window.location.search);
-        const pedidoId = Number(parametros.get("pedido") || 101);
+        let socket = null;
 
-        document.getElementById("numeroPedido").innerText =
-            `Pedido #${pedidoId}`;
+        function conectarPedido() {
+            const pedidoId = document
+                .getElementById("pedidoId")
+                .value.trim();
 
-        const socket = new WebSocket(
-            `ws://localhost:8001/ws/${pedidoId}`
-        );
+            const uuidValido =
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-        socket.onopen = function() {
+            if (!uuidValido.test(pedidoId)) {
+                alert("Ingresa un identificador UUID válido");
+                return;
+            }
+
+            // Cerrar la conexión anterior, si existe
+            if (socket !== null) {
+                socket.close();
+            }
+
+            const nuevaConexion = new WebSocket(
+                `ws://127.0.0.1:9003/ws/pedidos/${pedidoId}`
+            );
+
+            socket = nuevaConexion;
+
             document.getElementById("conexion").innerText =
-                "Conectado al servidor WebSocket";
-        };
-
-        socket.onmessage = function(event) {
-            const datos = JSON.parse(event.data);
+                "Conectando...";
 
             document.getElementById("estado").innerText =
-                datos.mensaje;
-        };
+                "Esperando notificaciones...";
 
-        socket.onclose = function() {
-            document.getElementById("conexion").innerText =
-                "Desconectado del servidor";
-        };
+            nuevaConexion.onopen = function() {
+                if (socket !== nuevaConexion) return;
 
-        function consultarPedido() {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send("Consultar pedido 101");
-            } else {
-                alert("No hay conexión con el servidor");
-            }
+                document.getElementById("conexion").innerText =
+                    "Conectado al pedido " + pedidoId;
+            };
+
+            nuevaConexion.onmessage = function(event) {
+                if (socket !== nuevaConexion) return;
+
+                try {
+                    const datos = JSON.parse(event.data);
+
+                    document.getElementById("estado").innerText =
+                        datos.mensaje;
+
+                    console.log("Notificación recibida:", datos);
+
+                } catch (error) {
+                    console.error("Notificación inválida:", error);
+                }
+            };
+
+            nuevaConexion.onclose = function() {
+                if (socket !== nuevaConexion) return;
+
+                document.getElementById("conexion").innerText =
+                    "Desconectado del servidor";
+            };
+
+            nuevaConexion.onerror = function() {
+                if (socket !== nuevaConexion) return;
+
+                document.getElementById("conexion").innerText =
+                    "Error de conexión";
+            };
         }
     </script>
 
