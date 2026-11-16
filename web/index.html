@@ -4,97 +4,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notificaciones - Cafetería Universitaria</title>
+    <title>Cafetería Universitaria</title>
+    <link rel="stylesheet" href="estilos.css">
 </head>
+
 <body>
 
-    <h1>Cafetería Universitaria</h1>
-    <h2>Notificaciones de pedidos</h2>
+    <header class="encabezado">
+        <div class="contenedor encabezado-contenido">
+            <div>
+                <h1>☕ Cafetería Universitaria</h1>
+                <p>Sistema distribuido de pedidos</p>
+            </div>
+            <span class="etiqueta">Servicio estudiantil</span>
+        </div>
+    </header>
 
-    <label for="pedidoId">Identificador del pedido:</label>
-    <input
-        type="text"
-        id="pedidoId"
-        placeholder="Ingresa el UUID de tu pedido"
-        size="40"
-    >
+    <main class="contenedor">
 
-    <button onclick="conectarPedido()">Conectar al pedido</button>
+        <section class="bienvenida">
+            <h2>¡Bienvenido a nuestra cafetería!</h2>
+            <p>
+                Selecciona tus productos, realiza tu pedido
+                y recibe notificaciones en tiempo real.
+            </p>
+        </section>
 
-    <p id="conexion">Sin conexión</p>
-    <h3 id="estado">Esperando notificaciones...</h3>
+        <div class="distribucion">
 
-    <script>
-        let socket = null;
+            <section class="panel-principal">
 
-        function conectarPedido() {
-            const pedidoId = document
-                .getElementById("pedidoId")
-                .value.trim();
+                <div class="tarjeta">
+                    <h2>1. Datos del estudiante</h2>
 
-            const uuidValido =
-                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                    <label for="estudianteId">
+                        Identificador del estudiante
+                    </label>
 
-            if (!uuidValido.test(pedidoId)) {
-                alert("Ingresa un identificador UUID válido");
-                return;
-            }
+                    <input
+                        type="text"
+                        id="estudianteId"
+                        value="EST-001"
+                        placeholder="Ejemplo: EST-001"
+                    >
+                </div>
 
-            // Cerrar la conexión anterior, si existe
-            if (socket !== null) {
-                socket.close();
-            }
+                <div class="tarjeta">
+                    <h2>2. Selecciona tus productos</h2>
+                    <p class="descripcion">
+                        Elige la cantidad que deseas comprar.
+                    </p>
 
-            const nuevaConexion = new WebSocket(
-                `ws://127.0.0.1:9003/ws/pedidos/${pedidoId}`
-            );
+                    <div class="productos">
 
-            socket = nuevaConexion;
+                        <article class="producto">
+                            <div class="producto-icono">☕</div>
+                            <h3>Café americano</h3>
+                            <p class="codigo">CAF-001</p>
+                            <p class="precio">$1.50</p>
 
-            document.getElementById("conexion").innerText =
-                "Conectando...";
+                            <label for="cantidadCafe">
+                                Cantidad
+                            </label>
 
-            document.getElementById("estado").innerText =
-                "Esperando notificaciones...";
+                            <input
+                                type="number"
+                                id="cantidadCafe"
+                                min="0"
+                                max="20"
+                                value="1"
+                            >
+                        </article>
 
-            nuevaConexion.onopen = function() {
-                if (socket !== nuevaConexion) return;
+                        <article class="producto">
+                            <div class="producto-icono">🥪</div>
+                            <h3>Sándwich</h3>
+                            <p class="codigo">SAN-001</p>
+                            <p class="precio">$2.75</p>
 
-                document.getElementById("conexion").innerText =
-                    "Conectado al pedido " + pedidoId;
-            };
+                            <label for="cantidadSandwich">
+                                Cantidad
+                            </label>
 
-            nuevaConexion.onmessage = function(event) {
-                if (socket !== nuevaConexion) return;
+                            <input
+                                type="number"
+                                id="cantidadSandwich"
+                                min="0"
+                                max="20"
+                                value="0"
+                            >
+                        </article>
 
-                try {
-                    const datos = JSON.parse(event.data);
+                    </div>
+                </div>
 
-                    document.getElementById("estado").innerText =
-                        datos.mensaje;
+                <div class="tarjeta">
+                    <h2>3. Confirmar pedido</h2>
 
-                    console.log("Notificación recibida:", datos);
+                    <label for="observaciones">
+                        Observaciones (opcional)
+                    </label>
 
-                } catch (error) {
-                    console.error("Notificación inválida:", error);
-                }
-            };
+                    <textarea
+                        id="observaciones"
+                        rows="3"
+                        placeholder="Ejemplo: Sin azúcar"
+                    ></textarea>
 
-            nuevaConexion.onclose = function() {
-                if (socket !== nuevaConexion) return;
+                    <div class="total">
+                        <span>Total estimado:</span>
+                        <strong id="totalPedido">$1.50</strong>
+                    </div>
 
-                document.getElementById("conexion").innerText =
-                    "Desconectado del servidor";
-            };
+                    <button
+                        id="btnRealizarPedido"
+                        class="boton-principal"
+                        disabled
+                    >
+                        Realizar pedido
+                    </button>
+                    <p class="descripcion">
+                        Activaremos este botón al conectar REST.
+                    </p>
+                </div>
 
-            nuevaConexion.onerror = function() {
-                if (socket !== nuevaConexion) return;
+            </section>
 
-                document.getElementById("conexion").innerText =
-                    "Error de conexión";
-            };
-        }
-    </script>
+            <aside class="panel-lateral">
 
+                <div class="tarjeta">
+                    <h2>📋 Seguimiento</h2>
+
+                    <p class="descripcion">
+                        Aquí podrás consultar tu pedido.
+                    </p>
+
+                    <div class="informacion">
+                        <span>Identificador del pedido</span>
+                        <strong id="pedidoId">
+                            Sin pedido
+                        </strong>
+                    </div>
+
+                    <div class="informacion">
+                        <span>Estado del pedido</span>
+                        <strong id="estadoPedido">
+                            Sin iniciar
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="tarjeta">
+                    <h2>🔔 Notificaciones</h2>
+
+                    <p id="conexion" class="conexion">
+                        Sin conexión WebSocket
+                    </p>
+
+                    <div class="notificacion">
+                        <p id="mensajeNotificacion">
+                            Cuando realices un pedido,
+                            aquí recibirás las actualizaciones.
+                        </p>
+                    </div>
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <footer>
+        <p>
+            Cafetería Universitaria |
+            Sistemas Distribuidos
+        </p>
+    </footer>
+
+    <script src="app.js"></script>
 </body>
 </html>

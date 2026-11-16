@@ -7,6 +7,7 @@ para una Cafetería Universitaria.
 
 from uuid import UUID
 from datetime import date
+from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi import (
     FastAPI,
@@ -45,6 +46,18 @@ app = FastAPI(
         "cafetería universitaria y coordinar los servicios internos."
     ),
     version="0.2.0"
+)
+
+# Permitir solicitudes desde la interfaz web local
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:3000",
+        "http://localhost:3000"
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Idempotency-Key"],
 )
 
 
