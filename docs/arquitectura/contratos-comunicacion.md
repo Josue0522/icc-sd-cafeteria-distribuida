@@ -322,13 +322,17 @@ preparar_pedido(
 
 ## 8. Comunicación WebSocket
 
-Responsable del módulo: Bryan.
+Se utiliza WebSockets para enviar notificaciones sobre los cambios de estado de los pedidos.
 
-### 8.1 Endpoint
+El servicio se implementa mediante Python y FastAPI, utilizando el puerto `9003` durante el desarrollo local.
 
-/ws/pedidos/{pedido_id}
+### 8.1 Endpoint del estudiante
 
-El estudiante establecerá una conexión para recibir actualizaciones de su pedido.
+`ws://127.0.0.1:9003/ws/pedidos/{pedido_id}`
+
+El parámetro `pedido_id` corresponde al UUID generado por la API REST.
+
+Cada conexión se asocia con el identificador del pedido para entregar las notificaciones correspondientes.
 
 ### 8.2 Formato de los eventos
 
@@ -337,10 +341,12 @@ El estudiante establecerá una conexión para recibir actualizaciones de su pedi
   "tipo": "estado_actualizado",
   "pedido_id": "550e8400-e29b-41d4-a716-446655440000",
   "estado": "EN_PREPARACION",
-  "mensaje": "Tu pedido está siendo preparado",
-  "fecha": "2026-11-14T19:05:00Z"
+  "mensaje": "Tu pedido está siendo preparado.",
+  "fecha": "2026-11-15T21:00:00Z"
 }
 ```
+
+Los eventos contienen `tipo`, `pedido_id`, `estado`, `mensaje` y `fecha`.
 
 ### 8.3 Notificación de pedido listo
 
@@ -349,18 +355,22 @@ El estudiante establecerá una conexión para recibir actualizaciones de su pedi
   "tipo": "estado_actualizado",
   "pedido_id": "550e8400-e29b-41d4-a716-446655440000",
   "estado": "LISTO",
-  "mensaje": "Tu pedido está listo",
-  "fecha": "2026-11-14T19:10:00Z"
+  "mensaje": "¡Tu pedido está listo!",
+  "fecha": "2026-11-15T21:01:00Z"
 }
 ```
 
-### 8.4 Reglas
+### 8.4 Manejo de conexiones y recuperación
 
-- La API será responsable de mantener el estado oficial.
-- Las notificaciones se enviarán después de actualizar el estado.
-- La desconexión del estudiante no eliminará el pedido.
-- El estudiante podrá recuperar su estado mediante GET /pedidos/{pedido_id}.
-- El cliente podrá reconectar al endpoint WebSocket.
+- La API REST mantiene el estado oficial del pedido.
+- WebSocket administra las conexiones activas de los estudiantes.
+- Las conexiones se agrupan por UUID de pedido.
+- La desconexión del estudiante no interrumpe el procesamiento del pedido.
+- El servicio conserva en memoria el último evento recibido.
+- Al reconectarse, el estudiante recibe el último evento disponible en memoria.
+- Cuando no existe un evento almacenado, WebSocket consulta `GET /pedidos/{pedido_id}` para recuperar el estado oficial.
+- La recuperación no garantiza reproducir todos los eventos anteriores.
+- La autorización de suscripciones todavía no está implementada.
 
 ## 9. Formato general de errores
 
@@ -470,40 +480,62 @@ El estado permanecerá almacenado y podrá consultarse mediante REST.
 
 ### 14.1 Comunicación interna
 
-La API REST publicará los cambios de estado mediante una conexión WebSocket hacia el servicio de notificaciones.
+La API REST publica los cambios de estado utilizando una conexión WebSocket hacia el servicio de notificaciones.
 
-Endpoint interno propuesto:
+**Endpoint interno:**
 
-ws://127.0.0.1:9003/ws/interno/notificaciones
+`ws://127.0.0.1:9003/ws/interno/notificaciones`
 
-Este endpoint será utilizado por la API y no por los estudiantes.
+La API establece la conexión, envía un evento JSON y cierra la conexión.
 
-La API abrirá una conexión, enviará un evento JSON y cerrará la conexión.
-
-El servicio de notificaciones recibirá el evento y lo distribuirá a los estudiantes conectados al pedido correspondiente.
+El servidor WebSocket valida la estructura básica del evento, almacena el último mensaje recibido y lo distribuye a las conexiones asociadas al pedido.
 
 ### 14.2 Comunicación con estudiantes
 
-Los estudiantes se conectarán al siguiente endpoint:
+**Endpoint:**
 
-/ws/pedidos/{pedido_id}
+`ws://127.0.0.1:9003/ws/pedidos/{pedido_id}`
 
-El servicio de notificaciones gestionará las conexiones activas y entregará las actualizaciones correspondientes.
+El estudiante establece una conexión utilizando el UUID de su pedido.
+
+El servidor mantiene las conexiones activas y envía actualizaciones a los clientes asociados a cada identificador.
 
 ### 14.3 Formato del evento
 
+```json
 {
   "tipo": "estado_actualizado",
   "pedido_id": "550e8400-e29b-41d4-a716-446655440000",
-  "estado": "EN_PREPARACION",
-  "mensaje": "Tu pedido está siendo preparado.",
-  "fecha": "2026-11-14T19:05:00Z"
+  "estado": "LISTO",
+  "mensaje": "¡Tu pedido está listo!",
+  "fecha": "2026-11-15T21:00:00Z"
 }
+```
 
-### 14.4 Manejo de errores
+El identificador del pedido debe corresponder a un UUID válido. Los campos `estado`, `mensaje` y `fecha` se transmiten como cadenas de texto.
 
-- La API será responsable del estado oficial del pedido.
-- Una falla de WebSockets no deberá interrumpir el procesamiento.
-- Los errores de notificación se registrarán en los logs.
-- El estudiante podrá consultar el estado actualizado mediante REST.
-- La URL y el endpoint interno son propuestas pendientes de revisión con el responsable de WebSockets.
+### 14.4 Configuración
+
+La API utiliza la variable de entorno `NOTIFICACIONES_WS_URL` para determinar la dirección del servicio de notificaciones.
+
+El valor predeterminado es:
+
+`ws://127.0.0.1:9003/ws/interno/notificaciones`
+
+La variable `NOTIFICACIONES_WS_TIMEOUT_SECONDS` configura el tiempo de espera de la comunicación, con un valor predeterminado de tres segundos.
+
+### 14.5 Manejo de errores y desconexiones
+
+- Una falla del servicio WebSocket no debe interrumpir el procesamiento principal del pedido.
+- La API registra los errores de notificación.
+- WebSocket administra la eliminación de conexiones desconectadas.
+- Los mensajes no entregados durante una caída no se almacenan en una cola persistente.
+- WebSocket puede recuperar el estado oficial desde `GET /pedidos/{pedido_id}` cuando no dispone del evento en memoria.
+- La recuperación depende de la disponibilidad de REST y de que el pedido siga registrado.
+- La conexión interna todavía no cuenta con autenticación y debe protegerse antes de utilizarse fuera del entorno local de pruebas.
+
+### 14.6 Validación realizada
+
+Se verificó la recepción de eventos desde REST, la entrega de notificaciones `LISTO`, las conexiones simultáneas, el procesamiento de pedidos durante una caída del servicio y la recuperación del estado desde REST.
+
+Además, se ejecutaron dos pruebas automatizadas con resultado `OK`.

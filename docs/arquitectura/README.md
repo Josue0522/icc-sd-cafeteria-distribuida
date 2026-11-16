@@ -10,7 +10,9 @@ Esta carpeta contiene la documentación de la arquitectura del Sistema Distribui
 | `contratos-comunicacion.md` | Propuesta de contratos REST, TCP, XML-RPC y WebSockets. |
 | `api-rest.md` | Diseño, funcionamiento, configuración y pruebas del módulo REST. |
 | `rpc-cocina.md` | Contrato y uso del servicio XML-RPC de cocina. |
-| `tcp-caja.md` | Protocolo y ejecución del módulo TCP de caja. |
+| `tcp-caja.md` | Protocolo y ejecución del módulo TCP de caja.|
+| `websocket-notificaciones.md`| Funcionamiento, integración, recuperación y pruebas del servicio de notificaciones WebSocket. |
+
 
 ## Estado
 

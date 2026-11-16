@@ -53,3 +53,43 @@ La salida de Pytest obtenida en la terminal de Visual Studio Code constituye la 
 ## Otros registros
 
 - [Resultados TCP y suite completa del 15/11/2026](tcp-2026-11-15.md)
+
+
+## Registro de pruebas — Módulo WebSocket
+
+**Fecha de ejecución:** 15/11/2026  
+**Responsable:** Bryan  
+**Entorno:** Windows PowerShell, Python 3.14, entorno virtual `.venv`  
+**Tecnologías:** FastAPI, WebSockets, JavaScript y unittest.
+
+### Comando ejecutado
+
+`python -m unittest pruebas.test_websocket_notificaciones -v`
+
+### Resultados obtenidos
+
+| Prueba | Resultado |
+|---|---|
+| Recepción de notificaciones desde REST | Exitosa |
+| Reconexión del estudiante | Exitosa |
+| Conexiones simultáneas de dos pedidos | Exitosa |
+| Enrutamiento por identificador UUID | Exitosa |
+| Recuperación del estado desde REST | Exitosa |
+| Pruebas automatizadas con unittest | 2 pruebas OK |
+
+### Funcionalidades verificadas
+
+Se comprobó que el servidor WebSocket permite recibir eventos enviados por la API REST y distribuirlos a los estudiantes conectados a cada pedido.
+
+También, se implementó y probó la recuperación del último estado desde REST cuando el servidor WebSocket pierde su información almacenada en memoria.
+
+### Limitaciones
+
+- No existe almacenamiento persistente de eventos WebSocket.
+- La recuperación depende de que REST conserve el pedido.
+- No se han implementado controles de autenticación y autorización.
+
+
+### Evidencia
+
+Se realizaron pruebas manuales mediante Swagger y la interfaz web, además de dos pruebas automatizadas con `unittest`.
