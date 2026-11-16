@@ -1,4 +1,4 @@
-# ADR-003: Mecanismo de comunicación WebSockets para notificaciones
+# ADR-004: Mecanismo de comunicación WebSockets para notificaciones
 
 ## Estado
 
@@ -14,10 +14,10 @@ El objetivo está en seleccionar un mecanismo que permita enviar notificaciones 
 
 | Alternativa | Contexto | Ventajas | Desventajas |
 |---|---|---|---|
-| REST | El estudiante consulta periódicamente el estado del pedido mediante solicitudes HTTP. | 1. Implementación sencilla. 2. Amplia compatibilidad con navegadores. | 1. Requiere consultas repetidas para detectar cambios. 2. Puede generar solicitudes innecesarias. |
-| Sockets TCP | Establece comunicación directa entre procesos mediante una conexión TCP. | 1. Comunicación bidireccional. 2. Baja latencia. | 1. Requiere implementar más detalles del protocolo. 2. No puede utilizarse directamente como socket TCP tradicional desde el navegador. |
-| RPC/gRPC | Permite invocar operaciones remotas entre componentes del sistema. | 1. Facilita la comunicación entre servicios. 2. Puede ofrecer buen rendimiento. | 1. No es la alternativa más sencilla para notificaciones directas al navegador. 2. Puede requerir herramientas adicionales. |
-| WebSockets | Mantiene una conexión persistente entre el servidor y el navegador. | 1. Comunicación bidireccional. 2. Notificaciones en tiempo real. 3. Evita consultas periódicas. | 1. Requiere administrar conexiones activas. 2. Las desconexiones necesitan tratamiento especial. |
+| REST | Consultar periódicamente el estado de los pedidos mediante HTTP. | Implementación sencilla y amplia compatibilidad con navegadores. | Requiere consultas repetidas para detectar cambios por lo que puede generar solicitudes innecesarias. |
+| Sockets TCP | Establece comunicación directa entre procesos mediante una conexión TCP. | Comunicación bidireccional y baja latencia. | No puede utilizarse directamente como socket TCP tradicional desde el navegador. |
+| RPC/gRPC | Invoca operaciones remotas entre componentes del sistema. | Facilita la comunicación entre servicios. | No es la alternativa más sencilla para notificaciones directas al navegador. |
+| WebSockets | Mantiene una conexión persistente entre el servidor y el navegador. | Comunicación bidireccional y notificaciones en tiempo real. | Las desconexiones necesitan tratamiento especial. |
 
 ## Decisión
 
@@ -25,13 +25,22 @@ Se propone utilizar WebSockets como mecanismo para el servicio de notificaciones
 
 Este mecanismo otorgará la capacidad de manetener una conexión entre el navegador del cliente y el servidor de notificacoines, de tal manera que los cambios de estado de los pedidos se enviarán de manera automática.
 
+El servicio establece conexiones con los estudiantes mediante la ruta:
+
+/ws/pedidos/{pedido_id}
+
+Además, recibe los eventos enviados por la API REST mediante:
+
+/ws/interno/notificaciones
+
 ## Justificación
 
-Consideramos adecuado utilizar WebSockets porque permite que el servidor envíe información al estudiante sin la necesidad de esperar una nueva solicitud HTTP. En el caso de REST, necesita consultas periódicas.
+Consideramos adecuado utilizar WebSockets porque permite que el servidor envíe información al estudiante sin la necesidad de esperar una nueva solicitud HTTP. Como en el caso de REST que necesita consultas periódicas.
 
-Además, cada conexión se relaciona con un identificador de pedido, lo que permite enviar notificaciones independientes a los estudiantes correspondientes.
+También, cada conexión se relaciona con un identificador de pedido, lo que permite enviar notificaciones independientes a los estudiantes correspondientes.
 
-La implementación utiliza Python y FastAPI..
+Además cuando el servicio WebSocket pierde su información al reiniciarse, puede consultar el estado oficial mediante GET /pedidos/{pedido_id} de la API REST, siempre que el pedido continúe disponible.
+
 
 ### Atributos de calidad beneficiados
 
