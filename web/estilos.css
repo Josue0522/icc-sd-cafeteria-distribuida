@@ -211,3 +211,59 @@ footer {
         display: none;
     }
 }
+
+/* Historial de notificaciones */
+.historial {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 0;
+}
+
+.historial-item {
+    border-left: 3px solid #285943;
+    background: #f7faf7;
+    padding: 12px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+}
+
+.historial-item strong {
+    color: #285943;
+    font-size: 13px;
+}
+
+.historial-item p {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.historial-item small {
+    color: #78716c;
+    font-size: 12px;
+}
+
+.historial-vacio {
+    color: #78716c;
+    font-size: 14px;
+}
+
+.boton-secundario {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    background: white;
+    color: #285943;
+    border: 2px solid #285943;
+    border-radius: 9px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.boton-secundario:hover {
+    background: #f2f6ee;
+}
+
+.boton-secundario:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

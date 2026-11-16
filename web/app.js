@@ -18,10 +18,17 @@ const pedidoId = document.getElementById("pedidoId");
 const estadoPedido = document.getElementById("estadoPedido");
 const conexion = document.getElementById("conexion");
 const mensajeNotificacion = document.getElementById("mensajeNotificacion");
+const historialNotificaciones = document.getElementById("historialNotificaciones");
+const buscarPedidoId = document.getElementById("buscarPedidoId");
+const btnBuscarPedido = document.getElementById("btnBuscarPedido");
 
 let socket = null;
 let enviando = false;
-
+let intentosReconexion = 0;
+let temporizadorReconexion = null;
+let pedidoConectado = null;
+// Identificadores de eventos que ya aparecen en el historial
+const eventosRegistrados = new Set();
 
 // 3. Calcular el total del pedido
 function calcularTotal() {
@@ -45,9 +52,80 @@ function calcularTotal() {
 }
 
 
-// 4. Conectar WebSocket al pedido registrado
-function conectarWebSocket(id) {
+function agregarAlHistorial(datos) {
 
+    // Identificar un evento por pedido, estado y fecha
+    const identificadorEvento = [
+        datos.pedido_id,
+        datos.estado,
+        datos.fecha
+    ].join("|");
+
+    // Evitar mostrar el mismo evento dos veces
+    if (eventosRegistrados.has(identificadorEvento)) {
+        return;
+    }
+
+    eventosRegistrados.add(identificadorEvento);
+
+    // Eliminar el mensaje inicial
+    const mensajeVacio = historialNotificaciones.querySelector(
+        ".historial-vacio"
+    );
+
+    if (mensajeVacio) {
+        mensajeVacio.remove();
+    }
+
+    // Crear el elemento del historial
+    const elemento = document.createElement("li");
+    elemento.className = "historial-item";
+
+    // Título del estado
+    const titulo = document.createElement("strong");
+    titulo.textContent = datos.estado;
+
+    // Descripción de la notificación
+    const descripcion = document.createElement("p");
+    descripcion.textContent = datos.mensaje;
+
+    // Fecha del evento
+    const fecha = document.createElement("small");
+
+    if (datos.fecha) {
+        const fechaEvento = new Date(datos.fecha);
+
+        fecha.textContent = Number.isNaN(fechaEvento.getTime())
+            ? ""
+            : fechaEvento.toLocaleString("es-EC");
+    }
+
+    elemento.appendChild(titulo);
+    elemento.appendChild(descripcion);
+    elemento.appendChild(fecha);
+
+    // Añadir el mensaje recibido
+    historialNotificaciones.appendChild(elemento);
+}
+
+
+
+
+function conectarWebSocket(id, esReconexion = false) {
+
+    // Cancelar reconexiones pendientes
+    if (temporizadorReconexion !== null) {
+        clearTimeout(temporizadorReconexion);
+        temporizadorReconexion = null;
+    }
+
+    if (!esReconexion) {
+        intentosReconexion = 0;
+    }
+
+    pedidoConectado = id;
+
+    // Cerrar conexión anterior si existe
     if (socket !== null) {
         socket.close();
     }
@@ -59,42 +137,146 @@ function conectarWebSocket(id) {
     socket = nuevaConexion;
     conexion.textContent = "Conectando WebSocket...";
 
+    // 1. Conexión exitosa
     nuevaConexion.onopen = function() {
+
         if (socket !== nuevaConexion) return;
 
+        intentosReconexion = 0;
         conexion.textContent = "WebSocket conectado";
+
+        console.log("WebSocket conectado al pedido:", id);
     };
 
+    // 2. Recibir notificaciones
     nuevaConexion.onmessage = function(event) {
+
         if (socket !== nuevaConexion) return;
 
         try {
             const datos = JSON.parse(event.data);
 
-            if (datos.pedido_id !== id) {
-                return;
-            }
+            if (datos.pedido_id !== id) return;
 
             estadoPedido.textContent = datos.estado;
             mensajeNotificacion.textContent = datos.mensaje;
 
+            // Registrar notificación en el historial
+            agregarAlHistorial(datos);
+
         } catch (error) {
-            console.error("Error al leer la notificación:", error);
+            console.error(
+                "Error al procesar notificación:",
+                error
+            );
         }
     };
 
+    // 3. Detectar desconexión
     nuevaConexion.onclose = function() {
+
         if (socket !== nuevaConexion) return;
+        if (pedidoConectado !== id) return;
 
         conexion.textContent = "WebSocket desconectado";
+
+        // Intentar reconectar hasta 5 veces
+        if (intentosReconexion < 5) {
+
+            intentosReconexion++;
+
+            conexion.textContent =
+                `Reconectando... Intento ${intentosReconexion}/5`;
+
+            temporizadorReconexion = setTimeout(() => {
+                temporizadorReconexion = null;
+
+                if (pedidoConectado === id &&
+                    socket === nuevaConexion) {
+                    conectarWebSocket(id, true);
+                }
+
+            }, 2000);
+
+        } else {
+
+            conexion.textContent =
+                "Sin conexión. Consulta nuevamente tu pedido.";
+
+            console.warn(
+                "Se alcanzó el máximo de reconexiones."
+            );
+        }
     };
 
+    // 4. Detectar errores
     nuevaConexion.onerror = function() {
+
         if (socket !== nuevaConexion) return;
 
-        conexion.textContent = "Error de conexión WebSocket";
+        console.error("Error de conexión WebSocket");
     };
 }
+
+
+
+
+async function consultarPedido() {
+
+    const id = buscarPedidoId.value.trim();
+
+    const formatoUUID =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!formatoUUID.test(id)) {
+        alert("Ingresa un identificador UUID válido.");
+        return;
+    }
+
+    btnBuscarPedido.disabled = true;
+    btnBuscarPedido.textContent = "Consultando...";
+
+    try {
+        const respuesta = await fetch(
+            `${API_URL}/pedidos/${id}`
+        );
+
+        const datos = await respuesta.json();
+
+        if (!respuesta.ok) {
+            throw new Error(
+                datos.error?.mensaje ||
+                "No se encontró el pedido."
+            );
+        }
+
+        // Limpiar la información del pedido anterior
+        historialNotificaciones.innerHTML = `
+            <li class="historial-vacio">
+                Todavía no hay notificaciones.
+            </li>
+        `;
+
+        eventosRegistrados.clear();
+
+        // Mostrar la información recuperada desde REST
+        pedidoId.textContent = datos.pedido_id;
+        estadoPedido.textContent = datos.estado;
+
+        mensajeNotificacion.textContent =
+            `Estado actual: ${datos.estado}`;
+
+        // Conectar WebSocket para recibir futuras actualizaciones
+        conectarWebSocket(datos.pedido_id);
+
+    } catch (error) {
+        alert("Error al consultar el pedido: " + error.message);
+    } finally {
+        btnBuscarPedido.disabled = false;
+        btnBuscarPedido.textContent = "Consultar pedido";
+    }
+}
+
 
 
 // 5. Crear el pedido utilizando REST
@@ -168,6 +350,16 @@ async function realizarPedido() {
             throw new Error(mensajeError);
         }
 
+        // Limpiar las notificaciones del pedido anterior
+        historialNotificaciones.innerHTML = `
+            <li class="historial-vacio">
+                Todavía no hay notificaciones.
+            </li>
+        `;
+
+        eventosRegistrados.clear();
+
+
         // Mostrar el pedido registrado
         pedidoId.textContent = datos.pedido_id;
         estadoPedido.textContent = datos.estado;
@@ -203,3 +395,5 @@ btnRealizarPedido.addEventListener("click", realizarPedido);
 
 // Calcular el total inicial
 calcularTotal();
+
+btnBuscarPedido.addEventListener("click", consultarPedido);
