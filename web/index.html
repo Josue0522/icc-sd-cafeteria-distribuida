@@ -10,6 +10,8 @@
     <h1>Cafetería Universitaria</h1>
     <h2>Notificaciones de pedidos</h2>
 
+    <h3 id="numeroPedido"></h3>
+
     <p id="conexion">Conectando...</p>
     <p id="estado">Esperando notificación...</p>
 
@@ -18,7 +20,11 @@
     </button>
 
     <script>
-        const pedidoId = 101;
+        const parametros = new URLSearchParams(window.location.search);
+        const pedidoId = Number(parametros.get("pedido") || 101);
+
+        document.getElementById("numeroPedido").innerText =
+            `Pedido #${pedidoId}`;
 
         const socket = new WebSocket(
             `ws://localhost:8001/ws/${pedidoId}`
